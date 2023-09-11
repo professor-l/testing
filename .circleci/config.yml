@@ -2,8 +2,10 @@
 # See: https://circleci.com/docs/configuration-reference
 version: 2.1
 
-steps:
-
+general:
+  branches:
+    ignore:
+      - gh-pages
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
@@ -28,17 +30,23 @@ jobs:
       - run:
           name: "Generate index.html on gh-pages branch"
           command: |
-            npx @redocly/cli build-docs definitions/spec.yaml --title="Experimental API Docs" --output=index.html
-            git stash
-            git checkout gh-pages
-            rm index.html
-            git stash pop
+            npx @redocly/cli build-docs definitions/spec.yaml --title="Experimental API Docs" --output=../index.html
       - run:
           name: "Push new index.html to gh-pages branch"
           command: |
-            git add index.html
-            git commit -m "Regenerate index.html"
-            git push origin gh-pages
+            set -x
+            git checkout gh-pages
+            if cmp --silent ./index.html ../index.html; then
+              echo "No docs change; skipping push"
+              exit 0
+            else
+              git config user.email "robot@example.com"
+              git config user.name "Robot"
+              cp ~/index.html ./
+              git add index.html
+              git commit -m "Regenerate index.html"
+              git push origin gh-pages
+            fi
 
 
 # Orchestrate jobs using workflows
