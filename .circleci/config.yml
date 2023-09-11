@@ -22,7 +22,7 @@ jobs:
           command: "echo Hello, World!"
   push-gh-pages:
     docker:
-      - image: cimg/node:15.1
+      - image: cimg/node:lts
     steps:
       - checkout
       - run:
