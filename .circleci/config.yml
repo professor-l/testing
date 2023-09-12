@@ -7,39 +7,55 @@ general:
     ignore:
       - gh-pages
 
-orbs:
-  gh-pages: sugarshin/gh-pages@1.0.1
-
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
-  render-docs:
+  say-hello:
+    # Specify the execution environment. You can specify an image from Docker Hub or use one of our convenience images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/configuration-reference/#executor-job
+    docker:
+      - image: cimg/node:lts
+    # Add steps to the job
+    # See: https://circleci.com/docs/configuration-reference/#steps
+    steps:
+      - checkout
+      - run:
+          name: "Say hello"
+          command: "echo Hello, World!"
+  push-gh-pages:
     docker:
       - image: cimg/node:lts
     steps:
       - checkout
       - run:
-          name: "Generate index.html"
+          name: "Generate index.html on gh-pages branch"
           command: |
-            mkdir dist
-            npx @redocly/cli build-docs definitions/spec.yaml --title="Experimental API Docs" --output=./dist/index.html
-      - store_artifacts:
-          path: dist
-      - persist_to_workspace:
-          root: .
-          paths:
-            - dist
+            npx @redocly/cli build-docs definitions/spec.yaml --title="Experimental API Docs" --output=../index.html
+      - run:
+          name: "Push new index.html to gh-pages branch"
+          command: |
+            set -x
+            git checkout gh-pages
+            if cmp --silent ./index.html ../index.html; then
+              echo "No docs change; skipping push"
+              exit 0
+            else
+              git config user.email "robot@example.com"
+              git config user.name "Robot"
+              cp ~/index.html ./
+              git add index.html
+              git commit -m "Regenerate index.html"
+              git push origin gh-pages
+            fi
+
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
   say-hello-workflow:
     jobs:
-      - render-docs
-      - gh-pages/deploy:
+      - say-hello
+      - push-gh-pages:
           filters:
             branches:
               only: main
-          requires:
-            - render-docs
-          ssh-fingerprints: 3d:53:cf:a9:6c:03:42:f9:b6:96:0a:5a:fc:00:54:98
