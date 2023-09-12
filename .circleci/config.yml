@@ -26,6 +26,9 @@ jobs:
     docker:
       - image: cimg/node:lts
     steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "3d:53:cf:a9:6c:03:42:f9:b6:96:0a:5a:fc:00:54:98"
       - checkout
       - run:
           name: "Generate index.html on gh-pages branch"
