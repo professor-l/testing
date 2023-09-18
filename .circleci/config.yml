@@ -31,21 +31,18 @@ jobs:
             - "3d:53:cf:a9:6c:03:42:f9:b6:96:0a:5a:fc:00:54:98"
       - checkout
       - run:
-          name: "Generate index.html on gh-pages branch"
+          name: "Generate and push index.html"
           command: |
-            npx @redocly/cli build-docs definitions/spec.yaml --title="Experimental API Docs" --output=../index.html
-      - run:
-          name: "Push new index.html to gh-pages branch"
-          command: |
-            set -x
+            TEMPDIR=$(mktemp -d)
+            npx @redocly/cli build-docs definitions/spec.yaml --title="Experimental API Docs" --output="${TEMPDIR}/index.html"
             git checkout gh-pages
-            if cmp --silent ./index.html ../index.html; then
+            if cmp --silent ./index.html $TEMPDIR/index.html; then
               echo "No docs change; skipping push"
               exit 0
             else
               git config user.email "robot@example.com"
               git config user.name "Robot"
-              cp ~/index.html ./
+              cp $TEMPDIR/index.html ./
               git add index.html
               git commit -m "Regenerate index.html"
               git push origin gh-pages
